@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Markdown Editor</string>
+    <string name="editor_tab">編集</string>
+    <string name="preview_tab">プレビュー</string>
+    <string name="format_bold">太字</string>
+    <string name="format_italic">斜体</string>
+    <string name="format_paragraph">段落</string>
+    <string name="format_table">表</string>
+    <string name="save">保存</string>
+    <string name="saved">保存しました</string>
+    <string name="editor_hint">Markdownで入力してください…</string>
+    <string name="preview_empty">プレビューする内容がありません</string>
+</resources>
