@@ -9,7 +9,7 @@
         <item name="android:windowLightStatusBar">false</item>
     </style>
 
-    <style name="Theme.MarkdownEditor.Dark" parent="@android:style/Theme.Material.Dark.NoActionBar">
+    <style name="Theme.MarkdownEditor.Dark" parent="@android:style/Theme.Material.NoActionBar">
         <item name="android:colorPrimary">@color/teal_700</item>
         <item name="android:colorPrimaryDark">@color/teal_200</item>
         <item name="android:colorAccent">@color/purple_200</item>
