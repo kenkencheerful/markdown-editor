@@ -36,6 +36,7 @@ fun EditorScreen(
     document: Document,
     onContentChange: (String) -> Unit,
     onTitleChange: (String) -> Unit,
+    inverted: Boolean = false,
     modifier: Modifier = Modifier
 ) {
     var textFieldValue by remember(document.id) {
@@ -109,7 +110,7 @@ fun EditorScreen(
                 .fillMaxWidth()
                 .weight(1f),
             placeholder = { Text(stringResource(R.string.editor_hint)) },
-            textStyle = TextStyle(fontSize = 16.sp),
+            textStyle = TextStyle(fontSize = 20.sp),
             keyboardOptions = KeyboardOptions(capitalization = KeyboardCapitalization.Sentences)
         )
     }

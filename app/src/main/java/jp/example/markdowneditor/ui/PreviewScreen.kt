@@ -25,6 +25,7 @@ import jp.example.markdowneditor.data.Document
 @Composable
 fun PreviewScreen(
     document: Document,
+    inverted: Boolean = false,
     modifier: Modifier = Modifier
 ) {
     val context = LocalContext.current
@@ -50,7 +51,7 @@ fun PreviewScreen(
                 modifier = Modifier.fillMaxWidth(),
                 factory = { viewContext ->
                     TextView(viewContext).apply {
-                        textSize = 16f
+                        textSize = 18f
                         setTextColor(textColor)
                         setTextIsSelectable(true)
                     }

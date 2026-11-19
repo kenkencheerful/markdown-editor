@@ -1,6 +1,8 @@
 package jp.example.markdowneditor.editor
 
 import android.app.Application
+import android.content.Intent
+import android.net.Uri
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import jp.example.markdowneditor.data.Document
@@ -11,6 +13,7 @@ import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import java.io.IOException
+import java.nio.charset.Charsets
 
 class EditorViewModel(application: Application) : AndroidViewModel(application) {
     private val documentRepository = DocumentRepository(application)
@@ -23,6 +26,39 @@ class EditorViewModel(application: Application) : AndroidViewModel(application) 
 
     private val _message = MutableStateFlow<String?>(null)
     val message: StateFlow<String?> = _message
+
+    private var _selectedFolderUri: String? = null
+    val selectedFolderUri: String? get() = _selectedFolderUri
+
+    fun setSelectedFolderUri(uri: String?) {
+        if (uri != null) {
+            try {
+                getApplication<Application>().contentResolver.takePersistableUriPermission(
+                    Uri.parse(uri),
+                    Intent.FLAG_GRANT_READ_URI_PERMISSION or Intent.FLAG_GRANT_WRITE_URI_PERMISSION
+                )
+            } catch (e: SecurityException) {
+                // ignored
+            }
+        }
+        _selectedFolderUri = uri
+    }
+
+    fun saveToSelectedFolder() {
+        val uriString = _selectedFolderUri ?: return
+        val documentToSave = _document.value
+        viewModelScope.launch {
+            try {
+                val uri = Uri.parse(uriString)
+                getApplication<Application>().contentResolver.openOutputStream(uri, "rwt")?.use { output ->
+                    output.write(documentToSave.content.toByteArray(Charsets.UTF_8))
+                }
+                _message.value = "保存先フォルダに保存しました"
+            } catch (error: Exception) {
+                _message.value = "保存先フォルダへの保存に失敗しました"
+            }
+        }
+    }
 
     init {
         viewModelScope.launch {
