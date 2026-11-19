@@ -13,7 +13,7 @@ import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import java.io.IOException
-import java.nio.charset.Charsets
+import java.nio.charset.StandardCharsets
 
 class EditorViewModel(application: Application) : AndroidViewModel(application) {
     private val documentRepository = DocumentRepository(application)
@@ -51,7 +51,7 @@ class EditorViewModel(application: Application) : AndroidViewModel(application) 
             try {
                 val uri = Uri.parse(uriString)
                 getApplication<Application>().contentResolver.openOutputStream(uri, "rwt")?.use { output ->
-                    output.write(documentToSave.content.toByteArray(Charsets.UTF_8))
+                    output.write(documentToSave.content.toByteArray(StandardCharsets.UTF_8))
                 }
                 _message.value = "保存先フォルダに保存しました"
             } catch (error: Exception) {

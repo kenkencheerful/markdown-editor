@@ -38,7 +38,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.FormatInvertColor
+import androidx.compose.material.icons.filled.WbInvert
 import androidx.compose.material3.darkColorScheme
 import androidx.compose.material3.lightColorScheme
 import jp.example.markdowneditor.editor.EditorViewModel
@@ -104,7 +104,7 @@ fun MarkdownEditorApp(viewModel: EditorViewModel = viewModel()) {
                         }
                         IconButton(onClick = { inverted = !inverted }) {
                             Icon(
-                                imageVector = Icons.Default.FormatInvertColor,
+                                imageVector = WbInvert,
                                 contentDescription = stringResource(R.string.invert_colors)
                             )
                         }
