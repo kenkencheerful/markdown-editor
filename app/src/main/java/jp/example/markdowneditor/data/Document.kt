@@ -1,8 +1,5 @@
 package jp.example.markdowneditor.data
 
-import kotlinx.serialization.Serializable
-
-@Serializable
 data class Document(
     val id: String = java.util.UUID.randomUUID().toString(),
     val title: String = "",

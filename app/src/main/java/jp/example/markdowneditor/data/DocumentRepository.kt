@@ -1,75 +1,53 @@
 package jp.example.markdowneditor.data
 
 import android.content.Context
-import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.core.edit
-import androidx.datastore.preferences.core.stringValue
+import androidx.datastore.preferences.core.longPreferencesKey
+import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.datastore.preferences.preferencesDataStore
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.coroutines.flow.map
-import kotlinx.coroutines.launch
-import kotlinx.serialization.decodeFromString
-import kotlinx.serialization.encodeToString
-import kotlinx.serialization.json.Json
-import kotlinx.coroutines.flow.flow
 
 private const val DATASTORE_NAME = "markdown_editor_datastore"
-private const val KEY_DOCUMENT = "document_content"
+private val DOCUMENT_ID = stringPreferencesKey("document_id")
+private val DOCUMENT_TITLE = stringPreferencesKey("document_title")
+private val DOCUMENT_CONTENT = stringPreferencesKey("document_content")
+private val DOCUMENT_CREATED_AT = longPreferencesKey("document_created_at")
+private val DOCUMENT_UPDATED_AT = longPreferencesKey("document_updated_at")
 
-class DocumentRepository private constructor(
-    private val context: Context,
-    private val json: Json = Json
-) {
+private val Context.markdownEditorDataStore by preferencesDataStore(name = DATASTORE_NAME)
 
-    private val dataStore = context.preferencesDataStore(name = DATASTORE_NAME)
+class DocumentRepository(context: Context) {
+    private val dataStore = context.applicationContext.markdownEditorDataStore
 
-    companion object {
-        @Volatile
-        private var instance: DocumentRepository? = null
-
-        fun getInstance(context: Context): DocumentRepository {
-            return instance ?: synchronized(this) {
-                instance ?: DocumentRepository(context.applicationContext).also { instance = it }
-            }
-        }
-    }
-
-    fun saveDocument(document: Document) {
-        val jsonString = json.encodeToString(Document.serializer(), document)
+    suspend fun saveDocument(document: Document) {
         dataStore.edit { preferences ->
-            preferences[stringValue(KEY_DOCUMENT)] = jsonString
+            preferences[DOCUMENT_ID] = document.id
+            preferences[DOCUMENT_TITLE] = document.title
+            preferences[DOCUMENT_CONTENT] = document.content
+            preferences[DOCUMENT_CREATED_AT] = document.createdAt
+            preferences[DOCUMENT_UPDATED_AT] = document.updatedAt
         }
     }
 
     fun loadDocument(): Flow<Document?> = dataStore.data.map { preferences ->
-        val jsonString = preferences[stringValue(KEY_DOCUMENT)] ?: return@map null
-        try {
-            json.decodeFromString(Document.serializer(), jsonString)
-        } catch (e: Exception) {
-            null
-        }
+        val content = preferences[DOCUMENT_CONTENT] ?: return@map null
+        Document(
+            id = preferences[DOCUMENT_ID] ?: "",
+            title = preferences[DOCUMENT_TITLE] ?: "",
+            content = content,
+            createdAt = preferences[DOCUMENT_CREATED_AT] ?: 0L,
+            updatedAt = preferences[DOCUMENT_UPDATED_AT] ?: 0L
+        )
     }
 
-    fun loadDocumentSuspend(): Document? {
-        return runBlocking {
-            dataStore.data.firstOrNull { preferences ->
-                preferences[stringValue(KEY_DOCUMENT)] != null
-            }?.let { preferences ->
-                val jsonString = preferences[stringValue(KEY_DOCUMENT)]!!
-                try {
-                    json.decodeFromString(Document.serializer(), jsonString)
-                } catch (e: Exception) {
-                    null
-                }
-            }
-        }
-    }
-
-    fun deleteDocument() {
+    suspend fun deleteDocument() {
         dataStore.edit { preferences ->
-            preferences[stringValue(KEY_DOCUMENT)] = null
+            preferences.remove(DOCUMENT_ID)
+            preferences.remove(DOCUMENT_TITLE)
+            preferences.remove(DOCUMENT_CONTENT)
+            preferences.remove(DOCUMENT_CREATED_AT)
+            preferences.remove(DOCUMENT_UPDATED_AT)
         }
     }
 }

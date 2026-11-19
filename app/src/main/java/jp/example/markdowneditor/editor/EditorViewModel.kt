@@ -7,100 +7,58 @@ import jp.example.markdowneditor.data.Document
 import jp.example.markdowneditor.data.DocumentRepository
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import java.io.IOException
 
 class EditorViewModel(application: Application) : AndroidViewModel(application) {
-
-    private val documentRepository = DocumentRepository.getInstance(application)
+    private val documentRepository = DocumentRepository(application)
 
     private val _document = MutableStateFlow(Document())
     val document: StateFlow<Document> = _document
 
-    private val _isLoading = MutableStateFlow(false)
+    private val _isLoading = MutableStateFlow(true)
     val isLoading: StateFlow<Boolean> = _isLoading
 
+    private val _message = MutableStateFlow<String?>(null)
+    val message: StateFlow<String?> = _message
+
     init {
-        // Load saved document
         viewModelScope.launch {
-            val document = documentRepository.loadDocumentSuspend()
-            if (document != null) {
-                _document.value = document
+            try {
+                documentRepository.loadDocument().first()?.let { _document.value = it }
+            } catch (error: IOException) {
+                _message.value =
+                    "文書を読み込めませんでした: ${error.localizedMessage ?: "保存データを確認してください"}"
+            } finally {
+                _isLoading.value = false
             }
         }
     }
 
     fun onContentChange(content: String) {
-        _document.update { it.copy(content = content) }
+        _document.update { it.copyWith(content = content) }
     }
 
     fun onTitleChange(title: String) {
-        _document.update { it.copy(title = title) }
-    }
-
-    fun applyFormat(
-        command: FormatCommand,
-        selectionStart: Int,
-        selectionEnd: Int
-    ) {
-        val content = _document.value.content
-        val newContent = when (command) {
-            is FormatCommand.Bold -> applyBold(content, selectionStart, selectionEnd)
-            is FormatCommand.Italic -> applyItalic(content, selectionStart, selectionEnd)
-            is FormatCommand.Paragraph -> applyParagraph(content, selectionStart, selectionEnd)
-            is FormatCommand.Table -> insertTable(content, selectionStart, selectionEnd)
-        }
-        _document.update { it.copy(content = newContent) }
+        _document.update { it.copyWith(title = title) }
     }
 
     fun save() {
+        val documentToSave = _document.value
         viewModelScope.launch {
-            documentRepository.saveDocument(_document.value)
+            try {
+                documentRepository.saveDocument(documentToSave)
+                _message.value = "保存しました"
+            } catch (error: IOException) {
+                _message.value =
+                    "保存できませんでした: ${error.localizedMessage ?: "ストレージを確認してください"}"
+            }
         }
     }
 
-    fun clear() {
-        _document.update { Document() }
+    fun dismissMessage() {
+        _message.value = null
     }
-
-    private fun applyBold(content: String, start: Int, end: Int): String {
-        if (start >= end) {
-            // 選択がない場合は ** を挿入
-            return content.substringBeforeEnd("**", "**")
-        }
-        return content.replaceRange(start, end, "**${content.substring(start, end)}**")
-    }
-
-    private fun applyItalic(content: String, start: Int, end: Int): String {
-        if (start >= end) {
-            return content.substringBeforeEnd("_", "_")
-        }
-        return content.replaceRange(start, end, "_" + content.substring(start, end) + "_")
-    }
-
-    private fun applyParagraph(content: String, start: Int, end: Int): String {
-        // 選択範囲を段落（空行）で区切る
-        val selectedText = content.substring(start, end)
-        return content.replaceRange(start, end, selectedText + "\n\n")
-    }
-
-    private fun insertTable(content: String, start: Int, end: Int): String {
-        val tableTemplate = """
-            | 列1 | 列2 |
-            |-----|-----|
-            |     |     |
-        """.trimIndent()
-        return content.replaceRange(start, end, tableTemplate)
-    }
-
-    sealed interface FormatCommand {
-        data object Bold : FormatCommand
-        data object Italic : FormatCommand
-        data object Paragraph : FormatCommand
-        data object Table : FormatCommand
-    }
-}
-
-private fun String.substringBeforeEnd(prefix: String, suffix: String): String {
-    return prefix + this + suffix
 }
